@@ -1,3 +1,7 @@
+local:
+  host: localhost
+  database: election2012_local
+
 development:
   host: localhost
   database: election2012_development

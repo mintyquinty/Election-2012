@@ -1,0 +1,38 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <b>First name:</b>
+  <%= @candidate.first_name %>
+</p>
+
+<p>
+  <b>Last name:</b>
+  <%= @candidate.last_name %>
+</p>
+
+<p>
+  <b>Party:</b>
+  <%= @candidate.party_id %>
+</p>
+
+<p>
+  <b>Quote:</b>
+  <%= @candidate.quote %>
+</p>
+
+<p>
+  <b>In race:</b>
+  <%= @candidate.in_race %>
+</p>
+
+<p>
+  <b>In race status:</b>
+  <%= @candidate.in_race_status %>
+</p>
+
+<p>
+  <%= image_tag @candidate.image_url(:thumb).to_s %>
+</p>
+
+<%= link_to 'Edit', edit_candidate_path(@candidate) %> |
+<%= link_to 'Back', candidates_path %>

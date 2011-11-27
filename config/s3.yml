@@ -1,0 +1,20 @@
+local:
+  bucket: currenttv_local
+  access_key_id: <%= ENV['AMAZON_ACCESS_KEY_ID'] %>
+  secret_access_key: <%= ENV['AMAZON_SECRET_ACCESS_KEY'] %>
+development:
+  bucket: currenttv_dev
+  access_key_id: <%= ENV['AMAZON_ACCESS_KEY_ID'] %>
+  secret_access_key: <%= ENV['AMAZON_SECRET_ACCESS_KEY'] %>
+test:
+  bucket: currenttv_test
+  access_key_id: <%= ENV['AMAZON_ACCESS_KEY_ID'] %>
+  secret_access_key: <%= ENV['AMAZON_SECRET_ACCESS_KEY'] %>
+staging:
+  bucket: currenttv_stg
+  access_key_id: <%= ENV['AMAZON_ACCESS_KEY_ID'] %>
+  secret_access_key: <%= ENV['AMAZON_SECRET_ACCESS_KEY'] %>
+production:
+  bucket: currenttv
+  access_key_id: <%= ENV['AMAZON_ACCESS_KEY_ID'] %>
+  secret_access_key: <%= ENV['AMAZON_SECRET_ACCESS_KEY'] %>
