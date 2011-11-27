@@ -1,261 +1,226 @@
-== Welcome to Rails
+PART I:
+-------
 
-Rails is a web-application framework that includes everything needed to create
-database-backed web applications according to the Model-View-Control pattern.
+rails new election_2012
 
-This pattern splits the view (also called the presentation) into "dumb"
-templates that are primarily responsible for inserting pre-built data in between
-HTML tags. The model contains the "smart" domain objects (such as Account,
-Product, Person, Post) that holds all the business logic and knows how to
-persist themselves to a database. The controller handles the incoming requests
-(such as Save New Account, Update Product, Show Post) by manipulating the model
-and directing data to the view.
+cd election_2012
 
-In Rails, the model is handled by what's called an object-relational mapping
-layer entitled Active Record. This layer allows you to present the data from
-database rows as objects and embellish these data objects with business logic
-methods. You can read more about Active Record in
-link:files/vendor/rails/activerecord/README.html.
+rm Gemfile.lock
 
-The controller and view are handled by the Action Pack, which handles both
-layers by its two parts: Action View and Action Controller. These two layers
-are bundled in a single package due to their heavy interdependence. This is
-unlike the relationship between the Active Record and Action Pack that is much
-more separate. Each of these packages can be used independently outside of
-Rails. You can read more about Action Pack in
-link:files/vendor/rails/actionpack/README.html.
+rm Gemfile
 
+vi Gemfile
+----------
+source 'http://rubygems.org'
 
-== Getting Started
+gem 'rails', '3.1.1'
+gem 'rake', '>=0.8.7'
+gem 'unicorn'
+gem 'mongo'
+gem 'bson_ext', '>= 1.4.0'
+gem 'mongoid', '>= 2.2.0'
+gem 'mongoid_slug'
+gem 'jquery-rails', '>= 1.0.12'
+gem 'delayed_job', '2.1.4'
+gem 'delayed_job_mongoid', '1.0.4'
+gem 'capistrano'
+gem 'capistrano-ext'
+gem 'kaminari', '~> 0.12.4'
+group :assets do
+   gem 'yui-compressor'
+end
+gem 'rspec-rails'
+gem 'tinymce-rails'
 
-1. At the command prompt, create a new Rails application:
-       <tt>rails new myapp</tt> (where <tt>myapp</tt> is the application name)
+# paperclip gems
+gem "mongoid-paperclip", :require => "mongoid_paperclip"
+gem "aws-s3",            :require => "aws/s3"
 
-2. Change directory to <tt>myapp</tt> and start the web server:
-       <tt>cd myapp; rails server</tt> (run with --help for options)
+# trial carrierwave replacement for paperclip, dev dep incl 'sqlite3'
+gem 'carrierwave-mongoid', :require => 'carrierwave/mongoid'
+gem 'sqlite3'
 
-3. Go to http://localhost:3000/ and you'll see:
-       "Welcome aboard: You're riding Ruby on Rails!"
+gem 'curb'
+gem 'feedzirra'
+gem 'memcache-client'
+---------------------
 
-4. Follow the guidelines to start developing your application. You can find
-the following resources handy:
+rails g scaffold Party name:string abbreviation:string color:string
 
-* The Getting Started Guide: http://guides.rubyonrails.org/getting_started.html
-* Ruby on Rails Tutorial Book: http://www.railstutorial.org/
+vi app/models/party.rb
+----------------------
+class Party < ActiveRecord::Base
+  has_many :candidates
+end
+---
 
+rails g scaffold Candidate first_name:string last_name:string party_id:integer quote:text in_race:boolean in_race_status:string
 
-== Debugging Rails
+vi app/models/candidate.rb
+--------------------------
+class Candidate
+  include Mongoid::Document
+  field :first_name, :type => String
+  field :last_name, :type => String
+  field :party_id, :type => Integer
+  field :quote, :type => String
+  field :in_race, :type => Boolean
+  field :in_race_status, :type => String
+  field :remote_image_url, :type => String
+  belongs_to :party
+  mount_uploader :image, CandidateImageUploader
+end
+---
 
-Sometimes your application goes wrong. Fortunately there are a lot of tools that
-will help you debug it and get it back on the rails.
+vi app/views/candidates/_form.html.erb
+--------------------------------------
+<div class="field">
+  <%= f.file_field :image %>
+</div>
+<div class="field">
+  <%= f.label :remote_image_url, "or image URL" %>
+  <%= f.text_field :remote_image_url %>
+</div>
+------
 
-First area to check is the application log files. Have "tail -f" commands
-running on the server.log and development.log. Rails will automatically display
-debugging and runtime information to these files. Debugging info will also be
-shown in the browser on requests from 127.0.0.1.
+vi app/views/candidates/show.html.erb
+-------------------------------------
+<p>
+  <%= image_tag @candidate.image_url(:thumb).to_s %>
+</p>
+----
 
-You can also log your own messages directly into the log file from your code
-using the Ruby logger class from inside your controllers. Example:
+rails g uploader candidate_image
 
-  class WeblogController < ActionController::Base
-    def destroy
-      @weblog = Weblog.find(params[:id])
-      @weblog.destroy
-      logger.info("#{Time.now} Destroyed Weblog ID ##{@weblog.id}!")
-    end
-  end
+vi app/uploaders/candidate_image_uploader.rb
+--------------------------------------------
+version :thumb do
+  process :scale => [50, 50]
+end
+---
 
-The result will be a message in your log file along the lines of:
-
-  Mon Oct 08 14:22:29 +1000 2007 Destroyed Weblog ID #1!
-
-More information on how to use the logger is at http://www.ruby-doc.org/core/
-
-Also, Ruby documentation can be found at http://www.ruby-lang.org/. There are
-several books available online as well:
-
-* Programming Ruby: http://www.ruby-doc.org/docs/ProgrammingRuby/ (Pickaxe)
-* Learn to Program: http://pine.fm/LearnToProgram/ (a beginners guide)
-
-These two books will bring you up to speed on the Ruby language and also on
-programming in general.
-
-
-== Debugger
-
-Debugger support is available through the debugger command when you start your
-Mongrel or WEBrick server with --debugger. This means that you can break out of
-execution at any point in the code, investigate and change the model, and then,
-resume execution! You need to install ruby-debug to run the server in debugging
-mode. With gems, use <tt>sudo gem install ruby-debug</tt>. Example:
-
-  class WeblogController < ActionController::Base
-    def index
-      @posts = Post.all
-      debugger
-    end
-  end
-
-So the controller will accept the action, run the first line, then present you
-with a IRB prompt in the server window. Here you can do things like:
-
-  >> @posts.inspect
-  => "[#<Post:0x14a6be8
-          @attributes={"title"=>nil, "body"=>nil, "id"=>"1"}>,
-       #<Post:0x14a6620
-          @attributes={"title"=>"Rails", "body"=>"Only ten..", "id"=>"2"}>]"
-  >> @posts.first.title = "hello from a debugger"
-  => "hello from a debugger"
-
-...and even better, you can examine how your runtime objects actually work:
-
-  >> f = @posts.first
-  => #<Post:0x13630c4 @attributes={"title"=>nil, "body"=>nil, "id"=>"1"}>
-  >> f.
-  Display all 152 possibilities? (y or n)
-
-Finally, when you're ready to resume execution, you can enter "cont".
+rails s
 
 
-== Console
+PART II:
+--------
 
-The console is a Ruby shell, which allows you to interact with your
-application's domain model. Here you'll have all parts of the application
-configured, just like it is when the application is running. You can inspect
-domain models, change values, and save to the database. Starting the script
-without arguments will launch it in the development environment.
+mkdir src
 
-To start the console, run <tt>rails console</tt> from the application
-directory.
+cd src
 
-Options:
+wget http://downloads.ghostscript.com/public/ghostscript-9.04.tar.gz
 
-* Passing the <tt>-s, --sandbox</tt> argument will rollback any modifications
-  made to the database.
-* Passing an environment name as an argument will load the corresponding
-  environment. Example: <tt>rails console production</tt>.
+tar xvzf ghostscript-9.04.tar.gz
 
-To reload your controllers and models after launching the console run
-<tt>reload!</tt>
+cd ghostscript-9.04
 
-More information about irb can be found at:
-link:http://www.rubycentral.org/pickaxe/irb.html
+./configure
+
+make && sudo make install
+
+cd ..
+
+wget http://downloads.sourceforge.net/project/gs-fonts/gs-fonts/8.11%20%28base%2035%2C%20GPL%29/ghostscript-fonts-std-8.11.tar.gz?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fgs-fonts%2F&ts=1322430313&use_mirror=kent
+
+tar xvzf ghostscript-fonts-std-8.11.tar.gz
+
+sudo mv fonts /usr/local/share/ghostscript/9.04/
+
+wget http://www.imagemagick.org/download/binaries/ImageMagick-x86_64-apple-darwin11.2.0.tar.gz
+
+tar xvzf ImageMagick-x86_64-apple-darwin11.2.0.tar.gz
+
+cd ImageMagick-6.7.3
+
+./configure --with-quantum-depth=16 --disable-dependency-tracking --with-x=yes --x-includes=/usr/X11R6/include --x-libraries=/usr/X11R6/lib/ --with-gslib --disable-openmp --with-gs-font-dir=/usr/local/share/ghostscript/9.04/fonts
+
+make && sudo make install
+
+cd ..
+
+convert logo: logo.png
+
+display logo.png (hi, mr wizard!)
+
+rm -rf src
 
 
-== dbconsole
+PART III:
+---------
 
-You can go to the command line of your database directly through <tt>rails
-dbconsole</tt>. You would be connected to the database with the credentials
-defined in database.yml. Starting the script without arguments will connect you
-to the development database. Passing an argument will connect you to a different
-database, like <tt>rails dbconsole production</tt>. Currently works for MySQL,
-PostgreSQL and SQLite 3.
+vi Gemfile
+----------
+# trial carrierwave replacement for paperclip, dev dep incl 'sqlite3'
+gem 'carrierwave-mongoid', :require => 'carrierwave/mongoid'
+gem 'sqlite3'
+gem 'rmagick'
+gem 'fog'
+---------
 
-== Description of Contents
+vi app/uploaders/candidate_image_uploader.rb
+--------------------------------------------
+storage :fog
+...
+def store_dir
+  "images/#{model.class.to_s.underscore}/#{model.id}"
+end
+...
+version :thumb do
+  process :resize_to_limit => [160, 90]
+end
+---
 
-The default directory structure of a generated Ruby on Rails application:
+vi config/initializers/carrierwave.rb
+-------------------------------------
+S3_CONFIG = YAML.load(ERB.new(File.new("#{Rails.root}/config/s3.yml").read).result)[Rails.env]
 
-  |-- app
-  |   |-- assets
-  |       |-- images
-  |       |-- javascripts
-  |       `-- stylesheets
-  |   |-- controllers
-  |   |-- helpers
-  |   |-- mailers
-  |   |-- models
-  |   `-- views
-  |       `-- layouts
-  |-- config
-  |   |-- environments
-  |   |-- initializers
-  |   `-- locales
-  |-- db
-  |-- doc
-  |-- lib
-  |   `-- tasks
-  |-- log
-  |-- public
-  |-- script
-  |-- test
-  |   |-- fixtures
-  |   |-- functional
-  |   |-- integration
-  |   |-- performance
-  |   `-- unit
-  |-- tmp
-  |   |-- cache
-  |   |-- pids
-  |   |-- sessions
-  |   `-- sockets
-  `-- vendor
-      |-- assets
-          `-- stylesheets
-      `-- plugins
+# Fog Configuration
+CarrierWave.configure do |config|
+  config.root = Rails.root.join('tmp')
+  config.cache_dir = 'carrierwave'
 
-app
-  Holds all the code that's specific to this particular application.
+  config.fog_credentials = {
+    :aws_access_key_id => S3_CONFIG['access_key_id'],
+    :aws_secret_access_key => S3_CONFIG['secret_access_key'],
+    :provider => 'AWS'
+  }
+  #config.fog_host = 'http://ruby.current.com'
+  config.fog_directory = S3_CONFIG['bucket']
+  config.fog_public = true
+end
+---
 
-app/assets
-  Contains subdirectories for images, stylesheets, and JavaScript files.
+vi config/s3.yml
+----------------
+local:
+  bucket: currenttv_local
+  access_key_id: <%= ENV['AMAZON_ACCESS_KEY_ID'] %>
+  secret_access_key: <%= ENV['AMAZON_SECRET_ACCESS_KEY'] %>
+development:
+  bucket: currenttv_dev
+  access_key_id: <%= ENV['AMAZON_ACCESS_KEY_ID'] %>
+  secret_access_key: <%= ENV['AMAZON_SECRET_ACCESS_KEY'] %>
+test:
+  bucket: currenttv_test
+  access_key_id: <%= ENV['AMAZON_ACCESS_KEY_ID'] %>
+  secret_access_key: <%= ENV['AMAZON_SECRET_ACCESS_KEY'] %>
+staging:
+  bucket: currenttv_stg
+  access_key_id: <%= ENV['AMAZON_ACCESS_KEY_ID'] %>
+  secret_access_key: <%= ENV['AMAZON_SECRET_ACCESS_KEY'] %>
+production:
+  bucket: currenttv
+  access_key_id: <%= ENV['AMAZON_ACCESS_KEY_ID'] %>
+  secret_access_key: <%= ENV['AMAZON_SECRET_ACCESS_KEY'] %>
+-----------------------------------------------------------
 
-app/controllers
-  Holds controllers that should be named like weblogs_controller.rb for
-  automated URL mapping. All controllers should descend from
-  ApplicationController which itself descends from ActionController::Base.
+vi ~/.bash_profile
+------------------
+export AMAZON_ACCESS_KEY_ID="xxx"
+export AMAZON_SECRET_ACCESS_KEY="xxx"
+-------------------------------------
 
-app/models
-  Holds models that should be named like post.rb. Models descend from
-  ActiveRecord::Base by default.
+source ~/.bash_profile
 
-app/views
-  Holds the template files for the view that should be named like
-  weblogs/index.html.erb for the WeblogsController#index action. All views use
-  eRuby syntax by default.
-
-app/views/layouts
-  Holds the template files for layouts to be used with views. This models the
-  common header/footer method of wrapping views. In your views, define a layout
-  using the <tt>layout :default</tt> and create a file named default.html.erb.
-  Inside default.html.erb, call <% yield %> to render the view using this
-  layout.
-
-app/helpers
-  Holds view helpers that should be named like weblogs_helper.rb. These are
-  generated for you automatically when using generators for controllers.
-  Helpers can be used to wrap functionality for your views into methods.
-
-config
-  Configuration files for the Rails environment, the routing map, the database,
-  and other dependencies.
-
-db
-  Contains the database schema in schema.rb. db/migrate contains all the
-  sequence of Migrations for your schema.
-
-doc
-  This directory is where your application documentation will be stored when
-  generated using <tt>rake doc:app</tt>
-
-lib
-  Application specific libraries. Basically, any kind of custom code that
-  doesn't belong under controllers, models, or helpers. This directory is in
-  the load path.
-
-public
-  The directory available for the web server. Also contains the dispatchers and the
-  default HTML files. This should be set as the DOCUMENT_ROOT of your web
-  server.
-
-script
-  Helper scripts for automation and generation.
-
-test
-  Unit and functional tests along with fixtures. When using the rails generate
-  command, template test files will be generated for you and placed in this
-  directory.
-
-vendor
-  External libraries that the application depends on. Also includes the plugins
-  subdirectory. If the app has frozen rails, those gems also go here, under
-  vendor/rails/. This directory is in the load path.
+rails s
