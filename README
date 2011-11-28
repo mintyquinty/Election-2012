@@ -224,3 +224,26 @@ export AMAZON_SECRET_ACCESS_KEY="xxx"
 source ~/.bash_profile
 
 rails s
+
+
+PART IV:
+--------
+
+vi config/routes.rb
+-------------------
+Election2012::Application.routes.draw do
+  resources :candidates
+  resources :parties
+
+  namespace :admin do |admin|
+    match '/' => 'dashboard#index'
+    resources :candidates
+    resources :parties
+  end
+end
+---
+
+rails g controller admin/candidates
+
+rails g controller admin/parties
+
