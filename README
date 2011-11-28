@@ -247,3 +247,32 @@ rails g controller admin/candidates
 
 rails g controller admin/parties
 
+rails g controller admin/dashboard
+
+vi app/controllers/admin/base_controller.rb
+-------------------------------------------
+class Admin::BaseController < ApplicationController
+  #before_filter :require_user
+  layout 'admin'
+end
+---
+
+vi app/controllers/admin/candidates_controller.rb
+----------------------------------------------
+class Admin::CandidatesController < Admin::BaseController
+...
+
+end
+---
+
+vi app/controllers/admin/parties_controller.rb
+----------------------------------------------
+class Admin::PartiesController < Admin::BaseController
+...
+
+end
+---
+
+cp app/views/candidates/* app/views/admin/candidates/
+
+cp app/views/parties/* app/views/admin/parties/
